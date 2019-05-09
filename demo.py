@@ -24,8 +24,8 @@ def loadFile(name):
     return result
 
 
-badQueries = loadFile('badqueries.txt')
-validQueries = loadFile('goodqueries.txt')
+badQueries = loadFile('/Data/demo/badqueries.txt')
+validQueries = loadFile('/Data/demo1/goodqueries.txt')
 
 badQueries = list(set(badQueries))
 validQueries = list(set(validQueries))
