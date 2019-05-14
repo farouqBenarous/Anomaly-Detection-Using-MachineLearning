@@ -3,6 +3,7 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+from cffi.backend_ctypes import xrange
 from pandas import Series
 from sklearn.feature_extraction.text import TfidfVectorizer
 import os
@@ -27,6 +28,15 @@ class Traffic:
         self.Host = Host
         self.Cookie = Cookie
         self.Connection = Connection
+
+
+def ToASCII(s):
+    s1 = [ord(c) for c in s]
+    return s1
+
+
+def ToString(s):
+    return chr(s)
 
 
 def LoadNormalDataToCsv():
@@ -166,13 +176,20 @@ def LoadNormalTestToCsv():
     return df
 
 
+def ConvertCsvAscii(dataframe):
+    for i, row in dataframe.iterrows():
+        print(row.values[i])
+        ifor_val = ToASCII(row)
+        dataframe.at[i, 'ifor'] = ifor_val
+    return dataframe
+
+
 if __name__ == "__main__":
     # for the winwods users you should change this path
     LOGDIR = "/tmp/mnist_tutorial/"
 
     print("Loading Normal Data ....")
     dfNormal = LoadNormalDataToCsv()
-    print(dataframe)
     print("Loading AbNormal Data ....")
     dfabnoraml = LoadAbNormalDataToCsv()
     print("Loading Test Data ....")
@@ -184,17 +201,22 @@ if __name__ == "__main__":
 
     AllTrafics.to_csv(r'Data/demo2/AllTraffic.csv')
 
-    print(AllTrafics)
-
     dataframe = pd.read_csv('Data/demo2/AllTraffic.csv')
 
-    inputX = dataframe.loc[:,
+
+    df = ConvertCsvAscii(dataframe)
+    df.to_csv(r'Data/demo2/AllTrafficASCII.csv')
+
+    print(df)
+
+    inputX = df.loc[:,
              ['http', 'Agent', 'Pragma', 'Cache', 'Accept', 'Encoding', ' Charset', 'Language', 'Host', 'Cookie',
               'Connection']].values
 
-    inputY = dataframe.loc[:, ["Target"]].values
+    inputY = df.loc[:, ["Target"]].values
 
-    X_train, X_test, y_train, y_test = train_test_split(inputX, inputY, test_size=0.2, random_state=42)  # splitting data
+    X_train, X_test, y_train, y_test = train_test_split(inputX, inputY, test_size=0.2,
+                                                        random_state=42)  # splitting data
 
     # Parameters
     n_input = 11  # features
