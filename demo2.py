@@ -1,3 +1,5 @@
+# dealing with the converting from scienyifc form
+
 import dataframe as dataframe
 import tensorflow as tf
 import numpy as np
@@ -16,22 +18,28 @@ from sklearn.model_selection import train_test_split
 
 
 class Traffic:
-    def __init__(self, http, Agent, Pragma, Cache, Accept, Encoding, Charset, Language, Host, Cookie, Connection):
+
+    def __init__(self, http, Agent, Pragma, Cache, Accept, Encoding, Charset, Language, Host, Cookie, Connection,
+                 Target):
         self.http = http
         self.Agent = Agent
         self.Pragma = Pragma
         self.Cache = Cache
         self.Accept = Accept
         self.Encoding = Encoding
-        self.Charrset = Charset
+        self.Charset = Charset
         self.Language = Language
         self.Host = Host
         self.Cookie = Cookie
         self.Connection = Connection
+        self.Target = Target
 
 
 def ToASCII(s):
-    s1 = [ord(c) for c in s]
+    s1 = 0
+
+    for i in xrange(len(s)):
+        s1 += ord(s[i]) * 2 ** (8 * (len(s) - i - 1))
     return s1
 
 
@@ -64,7 +72,8 @@ def LoadNormalDataToCsv():
         if "GET http" in lines[i + 1] or "POST http" in lines[i + 1] or "PUT http" in lines[i + 1] or "HEAD http" in \
                 lines[i + 1] or "DELETE http" in lines[i + 1] or "CONNECT http" in lines[i + 1] or "OPTIONS http" in \
                 lines[i + 1] or "TRACE http" in lines[i + 1] or "PATCH http" in lines[i + 1]:
-            traffic = Traffic(tmp[0], tmp[1], tmp[2], tmp[3], tmp[4], tmp[5], tmp[6], tmp[7], tmp[8], tmp[9], tmp[10])
+            traffic = Traffic(tmp[0], tmp[1], tmp[2], tmp[3], tmp[4], tmp[5], tmp[6], tmp[7], tmp[8], tmp[9], tmp[10],
+                              "0")
             TrafficList.append(traffic)
             del traffic
             tmp = []
@@ -74,12 +83,6 @@ def LoadNormalDataToCsv():
             continue
 
     df = pd.DataFrame([t.__dict__ for t in TrafficList])
-    Target = []
-    for i in range(len(df)):
-        Target.append("0")
-    # Target = np.reshape(Target, (1,len(df)-1)).T
-
-    df["Target"] = Series(Target, index=df.index)
 
     df.to_csv(r'Data/demo2/normalTraffic.csv')
     return df
@@ -112,7 +115,8 @@ def LoadAbNormalDataToCsv():
         if "GET http" in lines[i + 1] or "POST http" in lines[i + 1] or "PUT http" in lines[i + 1] or "HEAD http" in \
                 lines[i + 1] or "DELETE http" in lines[i + 1] or "CONNECT http" in lines[i + 1] or "OPTIONS http" in \
                 lines[i + 1] or "TRACE http" in lines[i + 1] or "PATCH http" in lines[i + 1]:
-            traffic = Traffic(tmp[0], tmp[1], tmp[2], tmp[3], tmp[4], tmp[5], tmp[6], tmp[7], tmp[8], tmp[9], tmp[10])
+            traffic = Traffic(tmp[0], tmp[1], tmp[2], tmp[3], tmp[4], tmp[5], tmp[6], tmp[7], tmp[8], tmp[9], tmp[10],
+                              "1")
             TrafficList.append(traffic)
             del traffic
             tmp = []
@@ -122,11 +126,6 @@ def LoadAbNormalDataToCsv():
             continue
 
     df = pd.DataFrame([t.__dict__ for t in TrafficList])
-    Target = []
-    for i in range(len(df)):
-        Target.append("1")
-
-    df["Target"] = Series(Target, index=df.index)
 
     df.to_csv(r'Data/demo2/AbnormalTraffic.csv')
     return df
@@ -157,7 +156,8 @@ def LoadNormalTestToCsv():
         if "GET http" in lines[i + 1] or "POST http" in lines[i + 1] or "PUT http" in lines[i + 1] or "HEAD http" in \
                 lines[i + 1] or "DELETE http" in lines[i + 1] or "CONNECT http" in lines[i + 1] or "OPTIONS http" in \
                 lines[i + 1] or "TRACE http" in lines[i + 1] or "PATCH http" in lines[i + 1]:
-            traffic = Traffic(tmp[0], tmp[1], tmp[2], tmp[3], tmp[4], tmp[5], tmp[6], tmp[7], tmp[8], tmp[9], tmp[10])
+            traffic = Traffic(tmp[0], tmp[1], tmp[2], tmp[3], tmp[4], tmp[5], tmp[6], tmp[7], tmp[8], tmp[9], tmp[10],
+                              "0")
             TrafficList.append(traffic)
             del traffic
             tmp = []
@@ -167,21 +167,37 @@ def LoadNormalTestToCsv():
             continue
 
     df = pd.DataFrame([t.__dict__ for t in TrafficList])
-    Target = []
-    for i in range(len(df)):
-        Target.append("0")
-    df["Target"] = Series(Target, index=df.index)
 
     df.to_csv(r'Data/demo2/normalTestTraffic.csv')
     return df
 
 
 def ConvertCsvAscii(dataframe):
+    TrafficList = []
+    tmp = []
+    Target = []
+
     for i, row in dataframe.iterrows():
-        print(row.values[i])
-        ifor_val = ToASCII(row)
-        dataframe.at[i, 'ifor'] = ifor_val
-    return dataframe
+        trafic = Traffic(row["http"], row["Agent"], row["Pragma"], row["Cache"], row["Accept"], row["Encoding"],
+                         row["Charset"], row["Language"], row["Host"], row["Cookie"], row["Connection"], row["Target"])
+        trafic.http = str(ToASCII(trafic.http))
+        trafic.Agent = str(ToASCII(trafic.Agent))
+        trafic.Pragma = str(ToASCII(trafic.Pragma))
+        trafic.Cache = str(ToASCII(trafic.Cache))
+        trafic.Accept = str(ToASCII(trafic.Accept))
+        trafic.Encoding = str(ToASCII(trafic.Encoding))
+        trafic.Charset = str(ToASCII(trafic.Charset))
+        trafic.Language = str(ToASCII(trafic.Language))
+        trafic.Host = str(ToASCII(trafic.Host))
+        trafic.Cookie = str(ToASCII(trafic.Cookie))
+        trafic.Connection = str(ToASCII(trafic.Connection))
+        target = str(ToASCII(str(trafic.Target)))
+        trafic.Target = chr(int(target))
+        TrafficList.append(trafic)
+
+    df = pd.DataFrame([t.__dict__ for t in TrafficList])
+
+    return df
 
 
 if __name__ == "__main__":
@@ -203,7 +219,6 @@ if __name__ == "__main__":
 
     dataframe = pd.read_csv('Data/demo2/AllTraffic.csv')
 
-
     df = ConvertCsvAscii(dataframe)
     df.to_csv(r'Data/demo2/AllTrafficASCII.csv')
 
@@ -215,8 +230,7 @@ if __name__ == "__main__":
 
     inputY = df.loc[:, ["Target"]].values
 
-    X_train, X_test, y_train, y_test = train_test_split(inputX, inputY, test_size=0.2,
-                                                        random_state=42)  # splitting data
+    X_train, X_test, y_train, y_test = train_test_split(inputX, inputY, test_size=0.2,random_state=42)  # splitting data
 
     # Parameters
     n_input = 11  # features
