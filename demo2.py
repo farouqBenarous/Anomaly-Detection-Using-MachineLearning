@@ -222,24 +222,29 @@ if __name__ == "__main__":
     df = ConvertCsvAscii(dataframe)
     df.to_csv(r'Data/demo2/AllTrafficASCII.csv')
 
-    print(df)
-
     inputX = df.loc[:,
              ['http', 'Agent', 'Pragma', 'Cache', 'Accept', 'Encoding', ' Charset', 'Language', 'Host', 'Cookie',
               'Connection']].values
 
     inputY = df.loc[:, ["Target"]].values
 
-    X_train, X_test, y_train, y_test = train_test_split(inputX, inputY, test_size=0.2,random_state=42)  # splitting data
+    X_train, X_test, y_train, y_test = train_test_split(inputX, inputY, test_size=0.2,
+                                                        random_state=42)  # splitting data
+
+
 
     # Parameters
-    n_input = 11  # features
-    n_hidden = 7  # hidden nodes
-    n_output = 1  # lables
-    learning_rate = 0.001
-    training_epochs = 1000000  # simply iterations
-    display_step = 10000  # to split the display
-    # n_samples = inputY.size  # number of the instances
+    n_input = 11
+    n_hidden1 = 6
+    n_hidden2 = 6
+    n_output = 1
+    learning_rate = 0.0001
+    training_epochs = 1000000
+    display_step = 10000
+    BATCH_SIZE = 100
+    data_size =df.shape[0]
+    train_size = X_train.shape[0]
+    test_size = X_test.shape[0]
 
     sess = tf.Session()
 
@@ -249,20 +254,34 @@ if __name__ == "__main__":
     Y = tf.placeholder(tf.float32, name="output")
     tf.summary.histogram("outputs ", Y)
 
-    with tf.name_scope("Hidden_Layer"):
-        W1 = tf.Variable(tf.zeros([n_input, n_hidden]), name="W1")
+    with tf.name_scope("Hidden_Layer_1"):
+        W1 = tf.Variable(tf.random_uniform([n_input, n_hidden1]), name="W1")
         tf.summary.histogram("Weights 1", W1)
-        b1 = tf.Variable(tf.zeros([n_hidden]), name="B1")
+
+        b1 = tf.Variable(tf.random_uniform([n_hidden1]), name="B1")
         tf.summary.histogram("Biases 1", b1)
-        L2 = tf.nn.sigmoid(tf.matmul(X, W1) + b1)
+
+        L1 = tf.nn.relu(tf.matmul(X, W1) + b1)
+        tf.summary.histogram("Activation", L1)
+
+    with tf.name_scope("Hidden_Layer_2"):
+        W2 = tf.Variable(tf.random_uniform([n_hidden2, n_hidden2]), name="W2")
+        tf.summary.histogram("Weights 2", W2)
+
+        b2 = tf.Variable(tf.random_uniform([n_hidden2]), name="B2")
+        tf.summary.histogram("Biases 2", b2)
+
+        L2 = tf.nn.relu(tf.matmul(L1, W2) + b2)
         tf.summary.histogram("Activation", L2)
 
     with tf.name_scope("OutputLayer"):
-        W2 = tf.Variable(tf.zeros([n_hidden, n_output]), name="W2")
-        tf.summary.histogram("Weights 2", W2)
-        b2 = tf.Variable(tf.zeros([n_output]), name="B2")
-        tf.summary.histogram("Biases 2", b2)
-        hy = tf.nn.sigmoid(tf.matmul(L2, W2) + b2)
+        W3 = tf.Variable(tf.random_uniform([n_hidden2, n_output]), name="W3")
+        tf.summary.histogram("Weights 3", W3)
+
+        b3 = tf.Variable(tf.random_uniform([n_output]), name="B3")
+        tf.summary.histogram("Biases 3", b3)
+
+        hy = tf.nn.softmax(tf.matmul(L2, W3) + b3)
         tf.summary.histogram("Output", hy)
 
     # calculate the coast of our calculations and then optimaze it
@@ -271,7 +290,7 @@ if __name__ == "__main__":
         tf.summary.histogram("Cost ", cost)
 
     with tf.name_scope("Train"):
-        optimizer = tf.train.AdamOptimizer(learning_rate).minimize(cost)
+        optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(cost)
         tf.summary.histogram("Optimazer ", optimizer.values())
 
     with tf.name_scope("accuracy"):
@@ -280,7 +299,7 @@ if __name__ == "__main__":
         tf.summary.scalar("accuracy", accuracy)
 
     summ = tf.summary.merge_all()
-    saver = tf.train.Saver()
+
     """cost = tf.reduce_sum(tf.pow(y_ - y, 2)) / (2 * n_samples)
       optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(cost)
      """
@@ -290,24 +309,26 @@ if __name__ == "__main__":
     writer.add_graph(sess.graph)
 
     # lets Do  Our real traing
+    saver = tf.train.Saver()
 
-    for i in range(training_epochs):
-        sess.run(optimizer, feed_dict={X: X_train, Y: y_train})
-        # Take a gradient descent step using our inputs and  labels
+    with sess:
+        for i in xrange(training_epochs * train_size // BATCH_SIZE):
+            offset = (i * BATCH_SIZE) % training_epochs
+            batch_data = X_train[offset:(offset + BATCH_SIZE), :]
+            batch_labels = y_train[offset:(offset + BATCH_SIZE)]
 
-        # That's all! The rest of the cell just outputs debug messages.
-        # Display logs per epoch step
+            cc = sess.run(optimizer, feed_dict={X: X_train, Y: y_train})
+            print("Training step:", cc)
 
-        if (i) % display_step == 0:
-            cc = sess.run(cost, feed_dict={X: X_train, Y: y_train})
-            print("Training step:", '%04d' % (i), "cost=", "{:.35f}".format(cc))
-            # print("\n  W1=", sess.run(W1), " \n W1=", sess.run(W2),
-            # "\n b1=", sess.run(b1), "b2=", sess.run(b2) )
+            if (i) % display_step == 0:
+                cc = sess.run(cost, feed_dict={X: X_train, Y: y_train})
+                print("Training step:", '%04d' % (i), "cost=", "{:.35f}".format(cc))
+                save_path = saver.save(sess, "/home/benarousfarouk/Desktop/SSI/Anomaly-Detection-InLogFiles/Models"
+                                             "/Demo2/model.ckpt")
 
     print("\n ------------------------------------Optimization "
           "Finished!------------------------------------------\n")
-    training_cost = cc
-    print("Training cost=", training_cost,
+    print("Training cost=", cc,
           "\n W1 = \n", sess.run(W1), "\n W2= \n", sess.run(W2),
           "\n b1=", sess.run(b1), '\n', "\n b2=", sess.run(b2), '\n')
 
@@ -315,6 +336,6 @@ if __name__ == "__main__":
     accuracy = tf.reduce_mean(tf.cast(answer, "float32"))
     # print(sess.run([hy], feed_dict={X: inputX, Y: inputY}))
     print("Accuracy: ", accuracy.eval({X: X_test, Y: y_test}, session=sess) * 100, "%")
-    print("final Coast = ", training_cost)
+    print("final Coast = ", cc)
     print("Parameters  :", "\n learning rate  = ", learning_rate, "\n epoches = ", training_epochs,
-          " \n hidden layers  = ", n_hidden, "\n coast function \n optimazer Adam ")
+          " \n hidden layers  = ", n_hidden1, "\n coast function \n optimazer Adam ")
