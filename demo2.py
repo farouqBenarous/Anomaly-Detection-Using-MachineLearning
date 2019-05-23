@@ -1,6 +1,5 @@
 # dealing with the converting from scienyifc form
 
-import dataframe as dataframe
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
@@ -36,15 +35,22 @@ class Traffic:
 
 
 def ToASCII(s):
-    s1 = 0
-
-    for i in xrange(len(s)):
-        s1 += ord(s[i]) * 2 ** (8 * (len(s) - i - 1))
+    l1 = [c for c in s]  # in Python, a string is just a sequence, so we can iterate over it!
+    l2 = [ord(c) for c in s]
+    s1 = ''
+    for c in l2:
+        s1 += str(c)
+    # for i in xrange(len(s)):
+    #    s1 += ord(s[i]) * 2 ** (8 * (len(s) - i - 1))
     return s1
 
 
 def ToString(s):
-    return chr(s)
+    s1 = 0
+
+    for i in xrange(len(s)):
+        s1 += chr(s[i]) * 2 ** (8 * (len(s) - i - 1))
+    return s1
 
 
 def LoadNormalDataToCsv():
@@ -200,27 +206,151 @@ def ConvertCsvAscii(dataframe):
     return df
 
 
+def ConvertCsvSmallAscii(dataframe):
+    TrafficList = []
+    tmp = []
+    Target = []
+    rounding = 1e+261
+    # add the lenghth in the e
+    for i, row in dataframe.iterrows():
+        trafic = Traffic(row["http"], row["Agent"], row["Pragma"], row["Cache"], row["Accept"], row["Encoding"],
+                         row["Charset"], row["Language"], row["Host"], row["Cookie"], row["Connection"], row["Target"])
+
+        http = float(ToASCII(trafic.http))
+        tmp = str(http).split("e", 1)
+        http = float(tmp[0])
+        http = round(http, 15)
+        trafic.http = str(http)
+
+        agent = float(ToASCII(trafic.Agent))
+        tmp = str(agent).split("e", 1)
+        agent = float(tmp[0])
+        agent = round(agent, 15)
+        trafic.Agent = str(agent)
+
+        pragma = float(ToASCII(trafic.Pragma))
+        tmp = str(pragma).split("e", 1)
+        pragma = float(tmp[0])
+        pragma = round(pragma, 15)
+        trafic.Pragma = str(pragma)
+
+        cache = float(ToASCII(trafic.Cache))
+        tmp = str(cache).split("e", 1)
+        cache = float(tmp[0])
+        cache = round(cache, 15)
+        trafic.Cache = str(cache)
+
+        accept = float(ToASCII(trafic.Accept))
+        tmp = str(accept).split("e", 1)
+        accept = float(tmp[0])
+        accept = round(accept, 15)
+        trafic.Accept = str(accept)
+
+        encoding = float(ToASCII(trafic.Encoding))
+        tmp = str(encoding).split("e", 1)
+        encoding = float(tmp[0])
+        encoding = round(encoding, 15)
+        trafic.Encoding = str(encoding)
+
+        charset = float(ToASCII(trafic.Charset))
+        tmp = str(charset).split("e", 1)
+        charset = float(tmp[0])
+        charset = round(charset, 15)
+        trafic.Charset = str(charset)
+
+        language = float(ToASCII(trafic.Language))
+        tmp = str(language).split("e", 1)
+        language = float(tmp[0])
+        language = round(language, 15)
+        trafic.Language = str(language)
+
+        host = float(ToASCII(trafic.Host))
+        tmp = str(host).split("e", 1)
+        host = float(tmp[0])
+        host = round(host, 15)
+        trafic.Host = str(host)
+
+        coockie = float(ToASCII(trafic.Cookie))
+        tmp = str(coockie).split("e", 1)
+        coockie = float(tmp[0])
+        coockie = round(coockie, 15)
+        trafic.Cookie = str(coockie)
+
+        connection = float(ToASCII(trafic.Connection))
+        tmp = str(connection).split("e", 1)
+        connection = float(tmp[0])
+        connection = round(connection, 15)
+        trafic.Connection = str(connection)
+
+        target = str(ToASCII(str(trafic.Target)))
+        trafic.Target = chr(int(target))
+        TrafficList.append(trafic)
+
+    df = pd.DataFrame([t.__dict__ for t in TrafficList])
+
+    return df
+
+
+def deleteinfvalue(d):
+    TrafficList = []
+
+    for i, row in d.iterrows():
+        trafic = Traffic(row["http"], row["Agent"], row["Pragma"], row["Cache"], row["Accept"], row["Encoding"],
+                         row["Charset"], row["Language"], row["Host"], row["Cookie"], row["Connection"], row["Target"])
+
+        if  trafic.http == np.inf or trafic.Agent == np.inf or trafic.Pragma == np.inf or trafic.Cache == np.inf or trafic.Accept == np.inf or trafic.Encoding == np.inf or trafic.Charset == np.inf or trafic.Language == np.inf or trafic.Host == np.inf or trafic.Cookie == np.inf  or trafic.Connection == np.inf:
+            trafic.http= 0
+            trafic.Agent = 0
+            trafic.Pragma=0
+            trafic.Cache = 0
+            trafic.Accept = 0
+            trafic.Encoding = 0
+            trafic.Charset = 0
+            trafic.Language = 0
+            trafic.Host = 0
+            trafic.Cookie = 0
+            trafic.Connection = 0
+            trafic.Target = 0
+        else:
+            TrafficList.append(trafic)
+
+    dataframe = pd.DataFrame([t.__dict__ for t in TrafficList])
+    dataframe.to_csv(r'Data/demo2/AllTrafficFinal.csv')
+
+    return dataframe
+
+
 if __name__ == "__main__":
     # for the winwods users you should change this path
     LOGDIR = "/tmp/mnist_tutorial/"
 
     print("Loading Normal Data ....")
-    dfNormal = LoadNormalDataToCsv()
+    # dfNormal = LoadNormalDataToCsv()
     print("Loading AbNormal Data ....")
-    dfabnoraml = LoadAbNormalDataToCsv()
+    # dfabnoraml = LoadAbNormalDataToCsv()
     print("Loading Test Data ....")
-    dfNormalTest = LoadNormalTestToCsv()
-    print("Data is ready ")
+    # dfNormalTest = LoadNormalTestToCsv()
 
-    Dataframe = [dfNormal, dfabnoraml, dfNormalTest]
-    AllTrafics = pd.concat(Dataframe)
+    print("Concatinating all the files into one   ....")
+    # Dataframe = [dfNormal, dfabnoraml, dfNormalTest]
+    # AllTrafics = pd.concat(Dataframe)
+    # AllTrafics.to_csv(r'Data/demo2/AllTraffic.csv')
 
-    AllTrafics.to_csv(r'Data/demo2/AllTraffic.csv')
+    print("Converting data  to ASCII represantation ...")
+    # dataframe = pd.read_csv('Data/demo2/AllTraffic.csv')
+    # df = ConvertCsvAscii(dataframe)
+    # df.to_csv(r'Data/demo2/AllTrafficASCII.csv')
 
-    dataframe = pd.read_csv('Data/demo2/AllTraffic.csv')
+    # Convert to small numbers
+    print("Converting data  to ASCII Small represantation ...")
+    # df = ConvertCsvSmallAscii(dataframe)
+    # df.to_csv(r'Data/demo2/AllTrafficSmallASCII.csv')
+    df = pd.read_csv("Data/demo2/AllTrafficSmallASCII.csv")
 
-    df = ConvertCsvAscii(dataframe)
-    df.to_csv(r'Data/demo2/AllTrafficASCII.csv')
+    deleteinfvalue(df)
+
+    df = pd.read_csv('Data/demo2/AllTrafficFinal.csv')
+    print("Data is ready  , the training will start after a while")
 
     inputX = df.loc[:,
              ['http', 'Agent', 'Pragma', 'Cache', 'Accept', 'Encoding', ' Charset', 'Language', 'Host', 'Cookie',
@@ -231,18 +361,18 @@ if __name__ == "__main__":
     X_train, X_test, y_train, y_test = train_test_split(inputX, inputY, test_size=0.2,
                                                         random_state=42)  # splitting data
 
-
+    print(X_train)
 
     # Parameters
     n_input = 11
     n_hidden1 = 6
     n_hidden2 = 6
     n_output = 1
-    learning_rate = 0.0001
+    learning_rate = 000.1
     training_epochs = 1000000
     display_step = 10000
     BATCH_SIZE = 100
-    data_size =df.shape[0]
+    data_size = df.shape[0]
     train_size = X_train.shape[0]
     test_size = X_test.shape[0]
 
@@ -255,37 +385,41 @@ if __name__ == "__main__":
     tf.summary.histogram("outputs ", Y)
 
     with tf.name_scope("Hidden_Layer_1"):
-        W1 = tf.Variable(tf.random_uniform([n_input, n_hidden1]), name="W1")
+        W1 = tf.Variable(tf.random_normal([n_input, n_hidden1]), name="W1")
         tf.summary.histogram("Weights 1", W1)
 
-        b1 = tf.Variable(tf.random_uniform([n_hidden1]), name="B1")
+        b1 = tf.Variable(tf.random_normal([n_hidden1]), name="B1")
         tf.summary.histogram("Biases 1", b1)
 
-        L1 = tf.nn.relu(tf.matmul(X, W1) + b1)
+        L1 = tf.nn.sigmoid(tf.matmul(X, W1) + b1)
         tf.summary.histogram("Activation", L1)
 
     with tf.name_scope("Hidden_Layer_2"):
-        W2 = tf.Variable(tf.random_uniform([n_hidden2, n_hidden2]), name="W2")
+        W2 = tf.Variable(tf.random_normal([n_hidden2, n_hidden2]), name="W2")
         tf.summary.histogram("Weights 2", W2)
 
-        b2 = tf.Variable(tf.random_uniform([n_hidden2]), name="B2")
+        b2 = tf.Variable(tf.random_normal([n_hidden2]), name="B2")
         tf.summary.histogram("Biases 2", b2)
 
-        L2 = tf.nn.relu(tf.matmul(L1, W2) + b2)
+        L2 = tf.nn.sigmoid(tf.matmul(L1, W2) + b2)
         tf.summary.histogram("Activation", L2)
 
     with tf.name_scope("OutputLayer"):
-        W3 = tf.Variable(tf.random_uniform([n_hidden2, n_output]), name="W3")
+        W3 = tf.Variable(tf.random_normal([n_hidden2, n_output]), name="W3")
         tf.summary.histogram("Weights 3", W3)
 
         b3 = tf.Variable(tf.random_uniform([n_output]), name="B3")
         tf.summary.histogram("Biases 3", b3)
 
-        hy = tf.nn.softmax(tf.matmul(L2, W3) + b3)
+        hy = tf.nn.sigmoid(tf.matmul(L2, W3) + b3)
         tf.summary.histogram("Output", hy)
 
     # calculate the coast of our calculations and then optimaze it
     with tf.name_scope("Coast"):
+        # tf.reduce_mean(-Y * tf.log(hy) - (1 - Y) * tf.log(1 - hy))
+        # tf.reduce_sum(tf.pow(Y_- hy, 2)) / (2 * train_size)
+        # tf.sqrt(tf.reduce_mean(tf.squared_difference(Y, hy)))
+        # tf.sqrt(tf.losses.mean_squared_error(hy, Y))
         cost = tf.reduce_mean(-Y * tf.log(hy) - (1 - Y) * tf.log(1 - hy))
         tf.summary.histogram("Cost ", cost)
 
@@ -300,9 +434,6 @@ if __name__ == "__main__":
 
     summ = tf.summary.merge_all()
 
-    """cost = tf.reduce_sum(tf.pow(y_ - y, 2)) / (2 * n_samples)
-      optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(cost)
-     """
     # Initialize variabls and tensorflow session
     sess.run(tf.global_variables_initializer())
     writer = tf.summary.FileWriter(LOGDIR)
@@ -310,21 +441,20 @@ if __name__ == "__main__":
 
     # lets Do  Our real traing
     saver = tf.train.Saver()
-
     with sess:
-        for i in xrange(training_epochs * train_size // BATCH_SIZE):
+        for i in range(training_epochs):
+
+            """
+            xrange(training_epochs * train_size // BATCH_SIZE)
             offset = (i * BATCH_SIZE) % training_epochs
             batch_data = X_train[offset:(offset + BATCH_SIZE), :]
-            batch_labels = y_train[offset:(offset + BATCH_SIZE)]
-
+            batch_labels = y_train[offset:(offset + BATCH_SIZE)] """
             cc = sess.run(optimizer, feed_dict={X: X_train, Y: y_train})
-            print("Training step:", cc)
-
             if (i) % display_step == 0:
                 cc = sess.run(cost, feed_dict={X: X_train, Y: y_train})
                 print("Training step:", '%04d' % (i), "cost=", "{:.35f}".format(cc))
-                save_path = saver.save(sess, "/home/benarousfarouk/Desktop/SSI/Anomaly-Detection-InLogFiles/Models"
-                                             "/Demo2/model.ckpt")
+                save_path = saver.save(sess,
+                                       "/home/benarousfarouk/Desktop/SSI/Anomaly-Detection-InLogFiles/Models/Demo2/model.ckpt")
 
     print("\n ------------------------------------Optimization "
           "Finished!------------------------------------------\n")
@@ -334,7 +464,6 @@ if __name__ == "__main__":
 
     answer = tf.equal(tf.floor(hy + 0.1), Y)
     accuracy = tf.reduce_mean(tf.cast(answer, "float32"))
-    # print(sess.run([hy], feed_dict={X: inputX, Y: inputY}))
     print("Accuracy: ", accuracy.eval({X: X_test, Y: y_test}, session=sess) * 100, "%")
     print("final Coast = ", cc)
     print("Parameters  :", "\n learning rate  = ", learning_rate, "\n epoches = ", training_epochs,
